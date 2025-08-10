@@ -15,7 +15,7 @@ jobs:
       - run: node scripts/daily-count.js
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          CHANNEL_ID: ${{ vars.CHANNEL_ID }}
           TIMEZONE: "Asia/Tokyo"
           EXCLUDE_BOTS: "false"
           EXCLUDE_USER_IDS: ""
