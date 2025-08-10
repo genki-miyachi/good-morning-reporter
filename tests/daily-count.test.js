@@ -145,7 +145,10 @@ describe('createResultMessage', () => {
     const testDate = new Date('2024-01-15T00:00:00Z');
     const result = createResultMessage(testDate, 42, 'Asia/Tokyo');
     
-    assert.match(result, /2024\/01\/15\([月火水木金土日]\) のみんなの GM は 42件 だよ/);
+    // メッセージに必要な要素が含まれることを確認
+    assert.ok(result.includes('2024/01/15(月)'));
+    assert.ok(result.includes('Good Morning'));
+    assert.ok(result.includes('42件'));
     assert.ok(result.length > 50);
   });
 
