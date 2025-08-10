@@ -7,11 +7,11 @@ const DISCORD_EPOCH = 1420070400000;
 
 const GREETING_PATTERNS = [
   'やあみんな！今日も頑張って起きれたかな？',
-  'おはよう！みんなの GM を数えてきたよ！',
-  'よっしゃ！今日の GM カウント結果だ！',
+  'おはよう！みんなの Good Morning を数えてきたよ！',
+  'よっしゃ！今日の Good Morning カウント結果だ！',
   'みんなー！今日も元気だったね！',
-  'おつかれさま！今日の GM はこんな感じだったよ！',
-  'はいはい！GM カウントの時間だよ〜！',
+  'おつかれさま！今日の Good Morning はこんな感じだったよ！',
+  'はいはい！Good Morning カウントの時間だよ〜！',
   'よし！みんなの頑張りを発表するぞ！',
   '今日もいい一日だったね！GM の結果はこちら！',
   'みなさんお疲れ様！今日の GM 報告です！',
@@ -38,15 +38,15 @@ function getStartOfDayUTC(now, timezone) {
     month: '2-digit',
     day: '2-digit'
   });
-  
+
   const dateStr = formatter.format(now);
-  
+
   const startOfDayInTimezone = new Date(`${dateStr}T00:00:00`);
-  
+
   const utcDate = new Date(startOfDayInTimezone.getTime());
   const localDate = new Date(startOfDayInTimezone.toLocaleString('en-US', { timeZone: timezone }));
   const timezoneOffsetMs = utcDate.getTime() - localDate.getTime();
-  
+
   return new Date(startOfDayInTimezone.getTime() + timezoneOffsetMs);
 }
 
@@ -91,16 +91,16 @@ async function getAllMessages(channelId, startSnowflake, token) {
 
   while (true) {
     const messages = await fetchMessages(channelId, afterSnowflake, token);
-    
+
     if (messages.length === 0) {
       break;
     }
 
     allMessages.push(...messages);
     pageCount++;
-    
+
     afterSnowflake = messages[messages.length - 1].id;
-    
+
     if (messages.length < 100) {
       break;
     }
@@ -112,16 +112,16 @@ async function getAllMessages(channelId, startSnowflake, token) {
 
 function countMessages(messages, filters = {}) {
   const { excludeBots = false, excludeUserIds = [] } = filters;
-  
+
   return messages.filter(message => {
     if (excludeBots && message.author.bot) {
       return false;
     }
-    
+
     if (excludeUserIds.includes(message.author.id)) {
       return false;
     }
-    
+
     return true;
   }).length;
 }
@@ -153,13 +153,13 @@ function formatDateString(date, timezone) {
     day: '2-digit',
     weekday: 'short'
   });
-  
+
   const parts = formatter.formatToParts(date);
   const year = parts.find(p => p.type === 'year').value;
   const month = parts.find(p => p.type === 'month').value;
   const day = parts.find(p => p.type === 'day').value;
   const weekday = parts.find(p => p.type === 'weekday').value;
-  
+
   return `${year}/${month}/${day}(${weekday})`;
 }
 
@@ -167,8 +167,8 @@ function createResultMessage(date, count, timezone) {
   const dateStr = formatDateString(date, timezone);
   const greeting = GREETING_PATTERNS[Math.floor(Math.random() * GREETING_PATTERNS.length)];
   const ending = END_PATTERNS[Math.floor(Math.random() * END_PATTERNS.length)];
-  
-  return `${greeting} ${dateStr} のみんなの GM は ${count}件 だよ ${ending}`;
+
+  return `${greeting}\n${dateStr} のみんなの Good Morning は ${count}件 だよ\n${ending}`;
 }
 
 async function main() {
@@ -177,7 +177,7 @@ async function main() {
     const channelId = process.env.CHANNEL_ID;
     const timezone = process.env.TIMEZONE || 'Asia/Tokyo';
     const excludeBots = process.env.EXCLUDE_BOTS === 'true';
-    const excludeUserIds = process.env.EXCLUDE_USER_IDS 
+    const excludeUserIds = process.env.EXCLUDE_USER_IDS
       ? process.env.EXCLUDE_USER_IDS.split(',').map(id => id.trim()).filter(id => id)
       : [];
 
@@ -188,18 +188,18 @@ async function main() {
     const now = new Date();
     const startOfDay = getStartOfDayUTC(now, timezone);
     const startSnowflake = timestampToSnowflake(startOfDay.getTime());
-    
+
     console.log(`Counting messages from ${startOfDay.toISOString()} (${formatDateString(startOfDay, timezone)})`);
     console.log(`Start snowflake: ${startSnowflake}`);
 
     const messages = await getAllMessages(channelId, startSnowflake, token);
     const count = countMessages(messages, { excludeBots, excludeUserIds });
-    
+
     console.log(`Total message count: ${count}`);
 
     const resultMessage = createResultMessage(startOfDay, count, timezone);
     await postResult(channelId, resultMessage, token);
-    
+
     console.log('Result posted successfully');
     console.log(`Posted message: ${resultMessage}`);
 
