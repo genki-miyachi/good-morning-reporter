@@ -6,6 +6,7 @@ const DISCORD_API_BASE = 'https://discord.com/api/v10';
 const DISCORD_EPOCH = 1420070400000;
 
 const GREETING_PATTERNS = [
+  '今日も一日みんな頑張ったね！',
   'やあみんな！今日も頑張って起きれたかな？',
   'おはよう！みんなの Good Morning を数えてきたよ！',
   'よっしゃ！今日の Good Morning カウント結果だ！',
@@ -28,7 +29,8 @@ const END_PATTERNS = [
   '今日もいい一日だったね！',
   'また明日もよろしく！',
   'お疲れ様でした〜！',
-  'みんなお疲れ！'
+  'みんなお疲れ！',
+  '明日も起きたいと思えるような素敵な朝を迎えられますように🌞'
 ];
 
 function getStartOfDayUTC(now, timezone) {
@@ -168,7 +170,7 @@ function createResultMessage(date, count, timezone) {
   const greeting = GREETING_PATTERNS[Math.floor(Math.random() * GREETING_PATTERNS.length)];
   const ending = END_PATTERNS[Math.floor(Math.random() * END_PATTERNS.length)];
 
-  return `${greeting}\n${dateStr} のみんなの Good Morning は ${count}件 だよ\n${ending}`;
+  return `${greeting}\n${dateStr} の目覚め人は ${count}人 だね！\n${ending}`;
 }
 
 async function main() {
