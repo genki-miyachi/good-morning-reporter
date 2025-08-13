@@ -109,7 +109,7 @@ async function getAllMessages(channelId, startSnowflake, token) {
   }
 
   console.log(`Fetched ${allMessages.length} messages across ${pageCount} pages`);
-  return allMessages;
+  return allMessages;　　 　
 }
 
 function countMessages(messages, filters = {}) {
@@ -126,6 +126,24 @@ function countMessages(messages, filters = {}) {
 
     return true;
   }).length;
+}
+
+function countUniqueAuthors(messages, filters = {}) {
+  const { excludeBots = false, excludeUserIds = [] } = filters;
+
+  const uniqueAuthorIds = new Set();
+
+  for (const message of messages) {
+    if (excludeBots && message.author.bot) {
+      continue;
+    }
+    if (excludeUserIds.includes(message.author.id)) {
+      continue;
+    }
+    uniqueAuthorIds.add(message.author.id);
+  }
+
+  return uniqueAuthorIds.size;
 }
 
 async function postResult(channelId, content, token) {
@@ -195,7 +213,7 @@ async function main() {
     console.log(`Start snowflake: ${startSnowflake}`);
 
     const messages = await getAllMessages(channelId, startSnowflake, token);
-    const count = countMessages(messages, { excludeBots, excludeUserIds });
+    const count = countUniqueAuthors(messages, { excludeBots, excludeUserIds });
 
     console.log(`Total message count: ${count}`);
 
@@ -221,6 +239,7 @@ export {
   fetchMessages,
   getAllMessages,
   countMessages,
+  countUniqueAuthors,
   postResult,
   formatDateString,
   createResultMessage
