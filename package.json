@@ -6,6 +6,7 @@
   "main": "scripts/daily-count.js",
   "scripts": {
     "start": "node scripts/daily-count.js",
+    "post": "node scripts/post.js",
     "test": "node --test tests/*.test.js",
     "test:watch": "node --test --watch tests/*.test.js"
   },
