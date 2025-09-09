@@ -1,4 +1,6 @@
 import { config } from 'dotenv';
+import { generateMessage } from './gemini-client.js';
+import { buildPrompt } from './prompt.js';
 
 config();
 
@@ -191,6 +193,38 @@ function createResultMessage(date, count, timezone) {
   return `${greeting}\n${dateStr} の目覚め人は ${count}人 だね！\n${ending}`;
 }
 
+// 生成されたメッセージに必ず「{count}人」を含める
+function enforceCountInText(text, count) {
+  const mustInclude = `${count}人`;
+  if (typeof text === 'string' && !text.includes(mustInclude)) {
+    return `${text}\n${mustInclude}`;
+  }
+  return text;
+}
+
+async function createGeminiMessage(date, count, timezone, messages = []) {
+  try {
+    // console.log(`messages: ${JSON.stringify(messages, null, 2)}`);
+    const dateStr = formatDateString(date, timezone);
+    const prompt = buildPrompt({ dateStr, count, messages });
+    // console.log(`prompt: ${prompt}`);
+    let message = await generateMessage(prompt);
+    // 必ず人数表現を含める（AI出力の揺れ対策）
+    message = enforceCountInText(message, count);
+
+    // Discord制限チェック
+    if (message.length > 2000) {
+      console.warn('Generated message too long, falling back to default');
+      return createResultMessage(date, count, timezone);
+    }
+
+    return message;
+  } catch (error) {
+    console.warn('Gemini API failed, falling back to default message:', error.message);
+    return createResultMessage(date, count, timezone);
+  }
+}
+
 async function main() {
   try {
     const token = process.env.DISCORD_BOT_TOKEN;
@@ -216,12 +250,26 @@ async function main() {
     const count = countUniqueAuthors(messages, { excludeBots, excludeUserIds });
 
     console.log(`Total message count: ${count}`);
+    // console.log(`Raw messages fetched: ${messages.length}`);
 
-    const resultMessage = createResultMessage(startOfDay, count, timezone);
-    await postResult(channelId, resultMessage, token);
+    const resultMessage = await createGeminiMessage(startOfDay, count, timezone, messages);
 
-    console.log('Result posted successfully');
-    console.log(`Posted message: ${resultMessage}`);
+    const dryRun = process.env.DRY_RUN === 'true';
+    if (dryRun) {
+      console.log('DRY_RUN mode: Would post the following message:');
+      console.log('---');
+      console.log(resultMessage);
+      console.log('---');
+    } else {
+      console.log(`Posting result message: ${resultMessage}`);
+      await postResult(channelId, resultMessage, token);
+      console.log('Result posted successfully');
+    }
+
+    if (!dryRun) {
+
+    }
+
 
   } catch (error) {
     console.error('Error:', error.message);
@@ -242,5 +290,6 @@ export {
   countUniqueAuthors,
   postResult,
   formatDateString,
-  createResultMessage
+  createResultMessage,
+  createGeminiMessage
 };

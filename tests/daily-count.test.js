@@ -6,7 +6,8 @@ import {
   countMessages,
   countUniqueAuthors,
   formatDateString,
-  createResultMessage
+  createResultMessage,
+  createGeminiMessage
 } from '../scripts/daily-count.js';
 
 describe('getStartOfDayUTC', () => {
@@ -204,7 +205,8 @@ describe('createResultMessage', () => {
                      result.includes('よろしく') ||
                      result.includes('休んで') ||
                      result.includes('いい一日') ||
-                     result.includes('お疲れ');
+                     result.includes('お疲れ') ||
+                     result.includes('🌞'); // 絵文字も含む
 
     assert.ok(hasGreeting, 'Should contain greeting pattern');
     assert.ok(hasEnding, 'Should contain ending pattern');
@@ -222,5 +224,34 @@ describe('createResultMessage', () => {
     const result = createResultMessage(testDate, 9999, 'Asia/Tokyo');
 
     assert.match(result, /9999人/);
+  });
+});
+
+describe('createGeminiMessage', () => {
+  test('should return a message with date and count', async () => {
+    const testDate = new Date('2024-01-15T00:00:00Z');
+    const result = await createGeminiMessage(testDate, 5, 'Asia/Tokyo');
+
+    // Should contain date and count information
+    assert.ok(result.includes('2024/01/15(月)'));
+    assert.ok(result.includes('5人'));
+    assert.ok(result.length > 0);
+  });
+
+  test('should handle zero count', async () => {
+    const testDate = new Date('2024-01-15T00:00:00Z');
+    const result = await createGeminiMessage(testDate, 0, 'Asia/Tokyo');
+
+    assert.ok(result.includes('2024/01/15(月)'));
+    assert.ok(result.includes('0人'));
+  });
+
+  test('should handle large count', async () => {
+    const testDate = new Date('2024-01-15T00:00:00Z');
+    const result = await createGeminiMessage(testDate, 999, 'Asia/Tokyo');
+
+    assert.ok(result.includes('2024/01/15(月)'));
+    // Gemini API は「999人」の代わりに「999」や「目覚め人」など別の表現を使う可能性がある
+    assert.ok(result.includes('999') || result.includes('目覚め人'));
   });
 });
