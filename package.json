@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node scripts/daily-count.js",
     "post": "node scripts/post.js",
+    "surprise": "node scripts/interval-post.js",
+    "surprise:test": "DRY_RUN=true INTERVAL_MINUTES=0.16 START_JST=16:01 node scripts/interval-post.js",
     "test": "node --test tests/*.test.js",
     "test:watch": "node --test --watch tests/*.test.js"
   },
