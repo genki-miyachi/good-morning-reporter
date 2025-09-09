@@ -1,4 +1,5 @@
 name: Daily Discord Count
+
 on:
   schedule:
     - cron: "0 14 * * *"
@@ -19,3 +20,6 @@ jobs:
           TIMEZONE: "Asia/Tokyo"
           EXCLUDE_BOTS: "false"
           EXCLUDE_USER_IDS: ""
+          GOOGLE_API_KEY: "AIzaSyBnT3yjksmUKrwKvErQY1FqCeIDQ6kxHJs"
+          GEMINI_MODEL: "gemini-2.0-flash-lite"
+          GEMINI_TIMEOUT_MS: 15000
