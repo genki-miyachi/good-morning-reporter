@@ -58,6 +58,15 @@ function timestampToSnowflake(timestampMs) {
   return ((BigInt(timestampMs) - BigInt(DISCORD_EPOCH)) << 22n).toString();
 }
 
+function snowflakeToTimestampMs(snowflake) {
+  try {
+    const id = BigInt(snowflake);
+    return Number((id >> 22n) + BigInt(DISCORD_EPOCH));
+  } catch {
+    return 0;
+  }
+}
+
 async function fetchMessages(channelId, afterSnowflake, token) {
   const url = new URL(`${DISCORD_API_BASE}/channels/${channelId}/messages`);
   url.searchParams.set('limit', '100');
@@ -88,7 +97,7 @@ async function fetchMessages(channelId, afterSnowflake, token) {
   return response.json();
 }
 
-async function getAllMessages(channelId, startSnowflake, token) {
+async function getAllMessages(channelId, startSnowflake, token, endTimestampMs) {
   const allMessages = [];
   let afterSnowflake = startSnowflake;
   let pageCount = 0;
@@ -100,7 +109,28 @@ async function getAllMessages(channelId, startSnowflake, token) {
       break;
     }
 
-    allMessages.push(...messages);
+    if (typeof endTimestampMs === 'number') {
+      // 範囲内(<= end)のみ取り込み、越えたら打ち切り
+      const within = [];
+      for (const m of messages) {
+        const ts = snowflakeToTimestampMs(m.id);
+        if (ts <= endTimestampMs) {
+          within.push(m);
+        } else {
+          // 以降は昇順でより新しいはずなので無視
+          break;
+        }
+      }
+      allMessages.push(...within);
+
+      // このページで打ち切った場合は終了
+      if (within.length < messages.length) {
+        pageCount++;
+        break;
+      }
+    } else {
+      allMessages.push(...messages);
+    }
     pageCount++;
 
     afterSnowflake = messages[messages.length - 1].id;
@@ -111,7 +141,7 @@ async function getAllMessages(channelId, startSnowflake, token) {
   }
 
   console.log(`Fetched ${allMessages.length} messages across ${pageCount} pages`);
-  return allMessages;　　 　
+  return allMessages;
 }
 
 function countMessages(messages, filters = {}) {
@@ -241,12 +271,18 @@ async function main() {
 
     const now = new Date();
     const startOfDay = getStartOfDayUTC(now, timezone);
-    const startSnowflake = timestampToSnowflake(startOfDay.getTime());
+    // 当日 04:00〜翌日 00:00(ローカル) - 1ms を UTC に換算
+    const rangeStartUtc = new Date(startOfDay.getTime() + 4 * 60 * 60 * 1000);
+    const startOfNextLocalDayUtc = getStartOfDayUTC(new Date(startOfDay.getTime() + 36 * 60 * 60 * 1000), timezone);
+    const rangeEndUtc = new Date(startOfNextLocalDayUtc.getTime() - 1);
+    const startSnowflake = timestampToSnowflake(rangeStartUtc.getTime());
 
-    console.log(`Counting messages from ${startOfDay.toISOString()} (${formatDateString(startOfDay, timezone)})`);
+    console.log(
+      `Counting messages from ${rangeStartUtc.toISOString()} to ${rangeEndUtc.toISOString()} (${formatDateString(startOfDay, timezone)})`
+    );
     console.log(`Start snowflake: ${startSnowflake}`);
 
-    const messages = await getAllMessages(channelId, startSnowflake, token);
+    const messages = await getAllMessages(channelId, startSnowflake, token, rangeEndUtc.getTime());
     const count = countUniqueAuthors(messages, { excludeBots, excludeUserIds });
 
     console.log(`Total message count: ${count}`);
