@@ -29,7 +29,25 @@ function analyzeMessages(messages) {
   };
 }
 
-export function buildPrompt({ dateStr, count, messages = [] }) {
+function serializeRecentBotPosts(recentBotPosts = []) {
+  if (!Array.isArray(recentBotPosts) || recentBotPosts.length === 0) return '[]';
+
+  const sanitized = recentBotPosts.map(p => {
+    const content = typeof p.content === 'string' ? p.content : '';
+    const trimmed = content.length > 500 ? content.slice(0, 500) + '…' : content;
+    const mentionUserIds = Array.from(trimmed.matchAll(/<@(?<id>\d+)>/g)).map(m => m.groups?.id).filter(Boolean);
+    return {
+      postedAt: p.postedAt || '',
+      dateStr: p.dateStr || '',
+      mentionUserIds,
+      content: trimmed
+    };
+  });
+
+  return JSON.stringify(sanitized, null, 2);
+}
+
+export function buildPrompt({ dateStr, count, messages = [], recentBotPosts = [] }) {
   const analysis = analyzeMessages(messages);
 
   let messageContext = '[]';
@@ -48,6 +66,8 @@ export function buildPrompt({ dateStr, count, messages = [] }) {
     });
     messageContext = JSON.stringify(structured, null, 2);
   }
+
+  const recentBotPostsContext = serializeRecentBotPosts(recentBotPosts);
 
   return `
 # 役割定義
@@ -97,6 +117,7 @@ export function buildPrompt({ dateStr, count, messages = [] }) {
 - 目覚め人数: ${count}人
 - 総投稿数: ${messages.length}件
 - 投稿情報: ${messageContext}
+- 最近3日間のbot投稿（参考用。直近のメンション傾向の偏り回避に役立てる）: ${recentBotPostsContext}
 
 # 出力要求
 上記のルールに従って、Discordチャンネルに投稿するメッセージを生成してください。

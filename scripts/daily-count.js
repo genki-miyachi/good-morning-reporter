@@ -1,6 +1,8 @@
 import { config } from 'dotenv';
 import { generateMessage } from './gemini-client.js';
 import { buildPrompt } from './prompt.js';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 config();
 
@@ -232,11 +234,49 @@ function enforceCountInText(text, count) {
   return text;
 }
 
-async function createGeminiMessage(date, count, timezone, messages = []) {
+// ===== 履歴管理（Discord API呼び出し増やさないためローカルに保存）
+const HISTORY_FILE = path.resolve(process.cwd(), '.gm_history.json');
+const MAX_HISTORY_ITEMS = 10; // 保存上限（プロンプトには直近3日だけ渡す）
+
+async function loadHistory() {
+  try {
+    const data = await fs.readFile(HISTORY_FILE, 'utf-8');
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) return parsed;
+    return [];
+  } catch (e) {
+    return [];
+  }
+}
+
+async function saveHistory(entries) {
+  const safe = Array.isArray(entries) ? entries.slice(-MAX_HISTORY_ITEMS) : [];
+  await fs.writeFile(HISTORY_FILE, JSON.stringify(safe, null, 2));
+}
+
+function pickRecentBotPosts(historyEntries, { days = 3, now = new Date() } = {}) {
+  if (!Array.isArray(historyEntries)) return [];
+  // postedAtが新しい順に並べ、直近days日分の異なるdateStrを優先的に最大days件取る
+  const sorted = historyEntries
+    .filter(e => typeof e?.content === 'string' && typeof e?.postedAt === 'string')
+    .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime());
+
+  const picked = [];
+  const seenDateStr = new Set();
+  for (const e of sorted) {
+    if (seenDateStr.has(e.dateStr)) continue;
+    picked.push({ postedAt: e.postedAt, dateStr: e.dateStr, content: e.content });
+    seenDateStr.add(e.dateStr);
+    if (picked.length >= days) break;
+  }
+  return picked.reverse(); // 古い→新しい順で渡す
+}
+
+async function createGeminiMessage(date, count, timezone, messages = [], recentBotPosts = []) {
   try {
     // console.log(`messages: ${JSON.stringify(messages, null, 2)}`);
     const dateStr = formatDateString(date, timezone);
-    const prompt = buildPrompt({ dateStr, count, messages });
+    const prompt = buildPrompt({ dateStr, count, messages, recentBotPosts });
     // console.log(`prompt: ${prompt}`);
     let message = await generateMessage(prompt);
     // 必ず人数表現を含める（AI出力の揺れ対策）
@@ -271,6 +311,7 @@ async function main() {
 
     const now = new Date();
     const startOfDay = getStartOfDayUTC(now, timezone);
+    const todayDateStr = formatDateString(startOfDay, timezone);
     // 当日 04:00〜翌日 00:00(ローカル) - 1ms を UTC に換算
     const rangeStartUtc = new Date(startOfDay.getTime() + 4 * 60 * 60 * 1000);
     const startOfNextLocalDayUtc = getStartOfDayUTC(new Date(startOfDay.getTime() + 36 * 60 * 60 * 1000), timezone);
@@ -278,7 +319,7 @@ async function main() {
     const startSnowflake = timestampToSnowflake(rangeStartUtc.getTime());
 
     console.log(
-      `Counting messages from ${rangeStartUtc.toISOString()} to ${rangeEndUtc.toISOString()} (${formatDateString(startOfDay, timezone)})`
+      `Counting messages from ${rangeStartUtc.toISOString()} to ${rangeEndUtc.toISOString()} (${todayDateStr})`
     );
     console.log(`Start snowflake: ${startSnowflake}`);
 
@@ -286,9 +327,15 @@ async function main() {
     const count = countUniqueAuthors(messages, { excludeBots, excludeUserIds });
 
     console.log(`Total message count: ${count}`);
-    // console.log(`Raw messages fetched: ${messages.length}`);
 
-    const resultMessage = await createGeminiMessage(startOfDay, count, timezone, messages);
+    // 履歴読み出し → 直近3日分のbot投稿を抽出
+    const history = await loadHistory();
+    const recentBotPosts = pickRecentBotPosts(
+      history.filter(e => e.dateStr !== todayDateStr),
+      { days: 3, now }
+    );
+
+    const resultMessage = await createGeminiMessage(startOfDay, count, timezone, messages, recentBotPosts);
 
     const dryRun = process.env.DRY_RUN === 'true';
     if (dryRun) {
@@ -302,10 +349,15 @@ async function main() {
       console.log('Result posted successfully');
     }
 
+    // 投稿成功時は履歴更新（DRY_RUNでは更新しない）
     if (!dryRun) {
-
+      const updated = history.concat({
+        postedAt: new Date().toISOString(),
+        dateStr: todayDateStr,
+        content: resultMessage
+      });
+      await saveHistory(updated);
     }
-
 
   } catch (error) {
     console.error('Error:', error.message);

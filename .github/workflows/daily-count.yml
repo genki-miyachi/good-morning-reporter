@@ -14,6 +14,13 @@ jobs:
         with:
           node-version: "20"
           cache: 'npm'
+      - name: Restore GM history
+        uses: actions/cache/restore@v4
+        with:
+          path: .gm_history.json
+          key: gm-history-${{ github.run_id }}
+          restore-keys: |
+            gm-history-
       - name: Install dependencies
         run: npm ci
       - run: node scripts/daily-count.js
@@ -26,3 +33,8 @@ jobs:
           GOOGLE_API_KEY: "AIzaSyBnT3yjksmUKrwKvErQY1FqCeIDQ6kxHJs"
           GEMINI_MODEL: "gemini-2.0-flash-lite"
           GEMINI_TIMEOUT_MS: 15000
+      - name: Save GM history
+        uses: actions/cache/save@v4
+        with:
+          path: .gm_history.json
+          key: gm-history-${{ github.run_id }}
