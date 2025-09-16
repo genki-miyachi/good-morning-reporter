@@ -278,7 +278,7 @@ async function createGeminiMessage(date, count, timezone, messages = [], recentB
     const dateStr = formatDateString(date, timezone);
     const prompt = buildPrompt({ dateStr, count, messages, recentBotPosts });
     // console.log(`prompt: ${prompt}`);
-    let message = await generateMessage(prompt);
+    let message = await generateMessageWithRetry(prompt);
     // 必ず人数表現を含める（AI出力の揺れ対策）
     message = enforceCountInText(message, count);
 
@@ -292,6 +292,55 @@ async function createGeminiMessage(date, count, timezone, messages = [], recentB
   } catch (error) {
     console.warn('Gemini API failed, falling back to default message:', error.message);
     return createResultMessage(date, count, timezone);
+  }
+}
+
+// ===== Gemini リトライ制御（429 と 5xx のみ再試行）
+const GEMINI_RETRY_MAX = Number(process.env.GEMINI_RETRY_MAX || 5);
+const GEMINI_RETRY_BASE_MS = Number(process.env.GEMINI_RETRY_BASE_MS || 1000);
+const GEMINI_RETRY_MAX_MS = Number(process.env.GEMINI_RETRY_MAX_MS || 10000);
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getHttpStatusFromGeminiError(error) {
+  // SDK/実行環境により形が異なる可能性があるため、代表的な形を網羅
+  if (error && typeof error.status === 'number') return error.status;
+  if (error && error.response && typeof error.response.status === 'number') return error.response.status;
+  if (typeof error?.code === 'number') return error.code; // 稀に code に HTTP ステータスが入るケース
+  const msg = String(error?.message || '');
+  // メッセージ内に HTTP ステータスが含まれている場合に限り抽出（429/5xx を対象）
+  const m = msg.match(/\b(429|5\d{2})\b/);
+  return m ? Number(m[1]) : null;
+}
+
+function isRetryableGeminiStatus(status) {
+  if (typeof status !== 'number') return false;
+  return status === 429 || (status >= 500 && status <= 599);
+}
+
+async function generateMessageWithRetry(prompt) {
+  let attempt = 0;
+  while (true) {
+    attempt++;
+    try {
+      return await generateMessage(prompt);
+    } catch (error) {
+      const status = getHttpStatusFromGeminiError(error);
+      const shouldRetry = isRetryableGeminiStatus(status) && attempt <= GEMINI_RETRY_MAX;
+
+      if (!shouldRetry) {
+        throw error;
+      }
+
+      const backoff = Math.min(
+        Math.floor(GEMINI_RETRY_BASE_MS * Math.pow(2, attempt - 1) * (1 + Math.random() * 0.2)),
+        GEMINI_RETRY_MAX_MS
+      );
+      console.warn(`Gemini error (status=${status ?? 'unknown'}). retrying ${attempt}/${GEMINI_RETRY_MAX} after ${backoff}ms...`);
+      await sleep(backoff);
+    }
   }
 }
 
