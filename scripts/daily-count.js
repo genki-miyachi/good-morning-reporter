@@ -169,6 +169,7 @@ async function createGeminiMessage(date, count, timezone, messages = [], recentB
     // console.log(`messages: ${JSON.stringify(messages, null, 2)}`);
     const dateStr = formatDateString(date, timezone);
     const prompt = buildPrompt({ dateStr, count, messages, recentBotPosts });
+    console.log('prompt:', prompt);
     // console.log(`prompt: ${prompt}`);
     let message = await generateMessageWithRetry(prompt);
     // 必ず人数表現を含める（AI出力の揺れ対策）
