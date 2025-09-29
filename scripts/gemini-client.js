@@ -8,7 +8,8 @@ if (!apiKey) {
   throw new Error('GOOGLE_API_KEY is required');
 }
 
-const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+console.log(`Using Gemini model: ${modelName}`);
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: modelName });
 
