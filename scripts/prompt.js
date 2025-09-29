@@ -15,6 +15,54 @@ function getMessageContent(msg) {
   return content;
 }
 
+const DISCORD_EPOCH = 1420070400000;
+
+function snowflakeToTimestampMs(snowflake) {
+  try {
+    const id = BigInt(snowflake);
+    return Number((id >> 22n) + BigInt(DISCORD_EPOCH));
+  } catch {
+    return 0;
+  }
+}
+
+function formatMsToJst(ms) {
+  const d = new Date(ms);
+  if (isNaN(d.getTime())) return '';
+  const formatter = new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(d);
+  const y = parts.find(p => p.type === 'year')?.value || '';
+  const m = parts.find(p => p.type === 'month')?.value || '';
+  const day = parts.find(p => p.type === 'day')?.value || '';
+  const h = parts.find(p => p.type === 'hour')?.value || '';
+  const mi = parts.find(p => p.type === 'minute')?.value || '';
+  const s = parts.find(p => p.type === 'second')?.value || '';
+  return `${y}/${m}/${day} ${h}:${mi}:${s}+09:00`;
+}
+
+function getMessageTimestampJst(msg) {
+  // Discord API の message.timestamp を優先
+  if (msg && typeof msg.timestamp === 'string' && msg.timestamp.length > 0) {
+    const d = new Date(msg.timestamp);
+    if (!isNaN(d.getTime())) return formatMsToJst(d.getTime());
+  }
+  // フォールバック: Snowflake から算出
+  if (msg && typeof msg.id === 'string' && msg.id) {
+    const ms = snowflakeToTimestampMs(msg.id);
+    if (ms > 0) return formatMsToJst(ms);
+  }
+  return '';
+}
+
 function analyzeMessages(messages) {
   const validMessages = messages.filter(msg => {
     const content = getMessageContent(msg);
@@ -61,11 +109,14 @@ export function buildPrompt({ dateStr, count, messages = [], recentBotPosts = []
         userId: msg.author?.id || '',
         userGlobalName: msg.author?.global_name || '',
         messageContent: getMessageContent(msg),
-        reactionCount
+        reactionCount,
+        wakeupTime: getMessageTimestampJst(msg)
       };
     });
     messageContext = JSON.stringify(structured, null, 2);
   }
+
+  console.log('messageContext:', messageContext);
 
   const recentBotPostsContext = serializeRecentBotPosts(recentBotPosts);
 
