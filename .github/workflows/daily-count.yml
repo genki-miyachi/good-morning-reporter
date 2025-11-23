@@ -23,7 +23,9 @@ jobs:
             gm-history-
       - name: Install dependencies
         run: npm ci
-      - run: node scripts/daily-count.js
+      - name: Build TypeScript
+        run: npm run build
+      - run: node dist/scripts/daily-count.js
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ vars.CHANNEL_ID }}
