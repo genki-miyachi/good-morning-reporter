@@ -25,7 +25,7 @@ Discord チャンネルの日次投稿数を自動集計・投稿する GitHub A
 Bot に以下の権限を付与してください：
 
 - `View Channels` - チャンネルの閲覧
-- `Read Message History` - メッセージ履歴の読み取り  
+- `Read Message History` - メッセージ履歴の読み取り
 - `Send Messages` - メッセージの送信
 
 ### 3. Bot をサーバーに招待
@@ -88,7 +88,13 @@ npm test
 ### 4. スクリプトの実行
 
 ```bash
+# 通常実行（実際にDiscordに投稿）
 npm start
+
+# DRY_RUNモード（投稿せずに動作確認）
+npm run start:dry-run
+# または
+DRY_RUN=true npm start
 ```
 
 ## 動作確認のコツ
@@ -106,10 +112,15 @@ npm start
 │       ├── daily-count.yml    # メインの実行ワークフロー
 │       └── test.yml          # テスト実行ワークフロー
 ├── scripts/
-│   └── daily-count.js        # Bot のメインスクリプト
-├── tests/
-│   └── daily-count.test.js   # 単体テスト
+│   ├── daily-count.ts        # Bot のメインスクリプト
+│   ├── config/               # 設定管理
+│   ├── services/             # サービス層
+│   ├── types/                # 型定義
+│   └── utils/                # ユーティリティ
+├── tests/                    # テストファイル
+├── dist/                     # ビルド出力（gitignore）
 ├── package.json              # パッケージ設定
+├── tsconfig.json             # TypeScript設定
 └── README.md                 # このファイル
 ```
 
@@ -119,7 +130,7 @@ npm start
 - Bot Token が正しく設定されているか確認
 - Token が有効期限切れでないか確認
 
-### 権限エラー  
+### 権限エラー
 - Bot に必要な権限が付与されているか確認
 - Bot がチャンネルにアクセス可能か確認
 

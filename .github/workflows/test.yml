@@ -31,5 +31,5 @@ jobs:
           GEMINI_MODEL: "dummy_model"
           GEMINI_TIMEOUT_MS: 15000
 
-      - name: Check code syntax
-        run: node --check scripts/daily-count.js
+      - name: Type check
+        run: npm run type-check

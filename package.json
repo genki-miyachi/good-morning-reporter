@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Discord daily GM count reporter bot",
-  "main": "scripts/daily-count.js",
   "scripts": {
     "build": "tsc",
     "type-check": "tsc --noEmit",
