@@ -35,6 +35,11 @@
     "778566687050039300": [
       {
         "category": "personality",
+        "key": "名前",
+        "value": "サミコ"
+      },
+      {
+        "category": "personality",
         "key": "哲学的な思考",
         "value": "幸せの定義について「欲しいもの全てが手に入ることではなく、今にある全てを全力で愛すること」と自身の哲学を述べる。"
       },
@@ -51,12 +56,22 @@
     ],
     "838544314979188700": [
       {
+        "category": "personality",
+        "key": "名前",
+        "value": "古沢佑次"
+      },
+      {
         "category": "interest",
         "key": "筋トレに関心",
         "value": "ジムに通いバーベルを握ることから、筋トレに関心がある。"
       }
     ],
     "842979791531671600": [
+      {
+        "category": "personality",
+        "key": "名前",
+        "value": "たいと"
+      },
       {
         "category": "personality",
         "key": "ユーモアのセンス",
@@ -79,6 +94,11 @@
       }
     ],
     "1266080501769437200": [
+      {
+        "category": "personality",
+        "key": "名前",
+        "value": "宮地 元気"
+      },
       {
         "category": "personality",
         "key": "ユーモアのセンス",
@@ -160,11 +180,21 @@
     "1335640566544863200": [
       {
         "category": "personality",
+        "key": "名前",
+        "value": "つやにい"
+      },
+      {
+        "category": "personality",
         "key": "ユーモアのセンス",
         "value": "「鼻わさびもしない」という独特の表現で、活動休止をユーモラスに伝えている。"
       }
     ],
     "1335836767504568600": [
+      {
+        "category": "personality",
+        "key": "名前",
+        "value": "ますだひさあき"
+      },
       {
         "category": "personality",
         "key": "ユーモラスな表現",
@@ -177,6 +207,11 @@
       }
     ],
     "1337684209652727800": [
+      {
+        "category": "personality",
+        "key": "名前",
+        "value": "さんぺい"
+      },
       {
         "category": "personality",
         "key": "ユーモラスな表現",
@@ -211,6 +246,11 @@
     "1338022137600151600": [
       {
         "category": "personality",
+        "key": "名前",
+        "value": "なおき"
+      },
+      {
+        "category": "personality",
         "key": "独特な言葉遣い",
         "value": "「だいじどす」「気づきやした」など、独特な言葉遣いをすることがある。"
       },
@@ -223,6 +263,11 @@
     "1338892536558915600": [
       {
         "category": "personality",
+        "key": "名前",
+        "value": "れなぴ"
+      },
+      {
+        "category": "personality",
         "key": "ポジティブな感情表現",
         "value": "共有されたコンテンツに対し「これ大好き笑😂😂😂」と非常にポジティブかつ興奮した感情を表現する。"
       },
@@ -233,6 +278,11 @@
       }
     ],
     "1340597256277069800": [
+      {
+        "category": "personality",
+        "key": "名前",
+        "value": "Mikey（まいきー）"
+      },
       {
         "category": "skill",
         "key": "写真撮影スキル",
@@ -247,6 +297,13 @@
         "category": "habit",
         "key": "絵文字利用",
         "value": "メッセージの最後に絵文字（🪐🦁）を使用する習慣がある。"
+      }
+    ],
+    "1079704269441224700": [
+      {
+        "category": "personality",
+        "key": "名前",
+        "value": "美月(みづき)"
       }
     ]
   }

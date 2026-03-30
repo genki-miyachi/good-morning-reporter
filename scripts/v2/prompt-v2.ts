@@ -83,8 +83,8 @@ export async function buildPromptV2(opts: BuildPromptV2Options): Promise<string>
    ポイント数を基準に決定すること。同一ポイントの候補が複数ならランダムに1人を選ぶ。
 
 5. **メンション作法**
-   - 本文中では <@userGlobalName> を使用
-   - メンションは <@userId> を正しく1つだけ含める
+   - メンションは <@userId> 形式を **1つだけ** 本文中に含める（Discord はこの形式でのみメンションが機能する）
+   - ユーザー名を呼びかける場合は、メンション（<@userId>）を使うこと。表示名をそのままテキストとして書かない
    - メンション対象ユーザーについて:
      - gm チャンネルの投稿内容に 50~100文字程度で深掘りしたリアクションを行う
      - **他チャンネルでの活動（otherChannelActivity）にも自然に触れる**
