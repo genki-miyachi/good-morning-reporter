@@ -41,6 +41,7 @@ async function main(): Promise<void> {
     const channelId = process.env.CHANNEL_ID; // gm チャンネル
     const guildId = process.env.GUILD_ID;
     const dryRun = !!process.env.DRY_RUN;
+    const readonly = !!process.env.READONLY;
 
     if (!token || !channelId || !guildId) {
       throw new Error(
@@ -59,36 +60,40 @@ async function main(): Promise<void> {
     // YYYY-MM-DD 形式（セレンディピティ検索の exclude_date 用）
     const todayDateOnly = startOfDay.toISOString().split('T')[0];
 
-    info('Starting daily count v2', { dateStr: todayDateStr, dryRun });
+    info('Starting daily count v2', { dateStr: todayDateStr, dryRun, readonly });
 
-    // ========================================
-    // Phase 1: データ収集
-    // ========================================
+    if (!readonly) {
+      // ========================================
+      // Phase 1: データ収集
+      // ========================================
 
-    // 全パブリックチャンネルを取得して DB 同期
-    const channels = await fetchPublicTextChannels(
-      guildId,
-      token,
-      excludeChannelIds,
-    );
-    await syncChannels(channels);
+      // 全パブリックチャンネルを取得して DB 同期
+      const channels = await fetchPublicTextChannels(
+        guildId,
+        token,
+        excludeChannelIds,
+      );
+      await syncChannels(channels);
 
-    // 差分メッセージ取得 → DB 保存
-    await fetchAndStoreMessages(channels, token);
+      // 差分メッセージ取得 → DB 保存
+      await fetchAndStoreMessages(channels, token);
 
-    // ========================================
-    // Phase 2: エンリッチメント
-    // ========================================
+      // ========================================
+      // Phase 2: エンリッチメント
+      // ========================================
 
-    // embedding 生成
-    await generateAndStoreMessageEmbeddings();
+      // embedding 生成
+      await generateAndStoreMessageEmbeddings();
 
-    // 会話グルーピング
-    await assignConversationIds();
+      // 会話グルーピング
+      await assignConversationIds();
 
-    // メモリ抽出（ongoing 減衰含む）
-    await extractAndStoreMemories(todayStart, guildId);
-    await decayOngoingMemories();
+      // メモリ抽出（ongoing 減衰含む）
+      await extractAndStoreMemories(todayStart, guildId);
+      await decayOngoingMemories();
+    } else {
+      info('READONLY mode: skipping Phase 1 & 2 (data collection & enrichment)');
+    }
 
     // ========================================
     // Phase 3: メッセージ生成
@@ -138,7 +143,7 @@ async function main(): Promise<void> {
       .from('messages')
       .select('channel_id')
       .gte('created_at', todayStart)
-      .neq('channel_id', Number(channelId));
+      .neq('channel_id', channelId);
 
     const todayActiveChannelIds = [
       ...new Set(
@@ -229,11 +234,9 @@ async function main(): Promise<void> {
       const { error: insertError } = await supabase
         .from('bot_posts')
         .insert({
-          channel_id: Number(channelId),
+          channel_id: channelId,
           content: resultMessage,
-          mvp_user_id: mvpUserIdFromMessage
-            ? Number(mvpUserIdFromMessage)
-            : null,
+          mvp_user_id: mvpUserIdFromMessage || null,
           posted_at: new Date().toISOString(),
           date_label: todayDateStr,
         });
