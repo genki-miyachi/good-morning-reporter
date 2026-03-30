@@ -40,8 +40,8 @@ async function main(): Promise<void> {
     const token = process.env.DISCORD_BOT_TOKEN;
     const channelId = process.env.CHANNEL_ID; // gm チャンネル
     const guildId = process.env.GUILD_ID;
-    const dryRun = !!process.env.DRY_RUN;
-    const readonly = !!process.env.READONLY;
+    const dryRun = process.env.DRY_RUN === 'true';
+    const readonly = process.env.READONLY === 'true';
 
     if (!token || !channelId || !guildId) {
       throw new Error(
