@@ -50,9 +50,9 @@ async function fetchUserActivity(
   const { data: userMessages, error: msgError } = await supabase
     .from('messages')
     .select('conversation_id, author_name')
-    .eq('author_id', Number(userId))
+    .eq('author_id', userId)
     .gte('created_at', todayStart)
-    .neq('channel_id', Number(gmChannelId))
+    .neq('channel_id', gmChannelId)
     .not('conversation_id', 'is', null);
 
   if (msgError || !userMessages || userMessages.length === 0) return null;
@@ -71,7 +71,7 @@ async function fetchUserActivity(
   // Step 2: 該当 conversation_id のメッセージを全て取得（他ユーザーの投稿含む）
   const { data: convMessages, error: convError } = await supabase
     .from('messages')
-    .select('author_name, author_id, content, created_at, channel_id, conversation_id')
+    .select('author_name, author_id::text, content, created_at, channel_id, conversation_id')
     .in('conversation_id', conversationIds)
     .order('channel_id', { ascending: true })
     .order('created_at', { ascending: true });
@@ -109,10 +109,10 @@ async function fetchUserActivity(
     }
     conversationMap.get(key)!.messages.push({
       authorName: msg.author_name,
-      authorId: String(msg.author_id),
+      authorId: msg.author_id,
       content: msg.content,
       createdAt: msg.created_at,
-      isMvpUser: String(msg.author_id) === userId,
+      isMvpUser: msg.author_id === userId,
     });
   }
 

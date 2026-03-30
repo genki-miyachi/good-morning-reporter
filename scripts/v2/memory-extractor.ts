@@ -206,7 +206,7 @@ const AUTO_PIN_THRESHOLD = 3;
  */
 async function upsertMemory(mem: ExtractedMemory): Promise<boolean> {
   try {
-    const scopeId = Number(mem.scopeId);
+    const scopeId = mem.scopeId;
 
     // 既存チェック
     const { data: existing } = await supabase

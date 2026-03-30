@@ -115,7 +115,7 @@ export async function syncChannels(
       .from('channels')
       .upsert(
         {
-          id: Number(ch.id),
+          id: ch.id,
           name: ch.name,
           updated_at: new Date().toISOString(),
         },

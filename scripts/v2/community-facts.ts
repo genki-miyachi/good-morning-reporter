@@ -62,7 +62,7 @@ async function upsertManualMemory(
     const { error } = await supabase.from('memories').upsert(
       {
         scope,
-        scope_id: Number(scopeId),
+        scope_id: scopeId,
         category: mem.category,
         key: mem.key,
         value: mem.value,

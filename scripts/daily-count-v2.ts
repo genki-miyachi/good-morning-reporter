@@ -40,7 +40,7 @@ async function main(): Promise<void> {
     const token = process.env.DISCORD_BOT_TOKEN;
     const channelId = process.env.CHANNEL_ID; // gm チャンネル
     const guildId = process.env.GUILD_ID;
-    const dryRun = process.env.DRY_RUN === 'true';
+    const dryRun = !!process.env.DRY_RUN;
 
     if (!token || !channelId || !guildId) {
       throw new Error(
@@ -257,8 +257,8 @@ async function fetchGmMessages(
 ): Promise<DiscordMessage[]> {
   const { data, error } = await supabase
     .from('messages')
-    .select('id, channel_id, author_id, author_name, content, created_at, reaction_count')
-    .eq('channel_id', Number(channelId))
+    .select('id::text, channel_id::text, author_id::text, author_name, content, created_at, reaction_count')
+    .eq('channel_id', channelId)
     .gte('created_at', todayStart)
     .order('created_at', { ascending: true });
 
@@ -266,13 +266,13 @@ async function fetchGmMessages(
 
   // DiscordMessage 形式に変換
   return data.map((row) => ({
-    id: String(row.id),
-    channel_id: String(row.channel_id),
+    id: row.id,
+    channel_id: row.channel_id,
     content: row.content,
     timestamp: row.created_at,
     edited_timestamp: null,
     author: {
-      id: String(row.author_id),
+      id: row.author_id,
       username: row.author_name,
       global_name: row.author_name,
       bot: false,

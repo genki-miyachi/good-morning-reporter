@@ -43,13 +43,11 @@ async function fetchChannelMessages(
   // DB から last_fetched_message_id を取得
   const { data: channelRow } = await supabase
     .from('channels')
-    .select('last_fetched_message_id')
-    .eq('id', Number(channel.id))
+    .select('last_fetched_message_id::text')
+    .eq('id', channel.id)
     .single();
 
-  const afterSnowflake = channelRow?.last_fetched_message_id
-    ? String(channelRow.last_fetched_message_id)
-    : null;
+  const afterSnowflake = channelRow?.last_fetched_message_id ?? null;
 
   // ページングで全メッセージを取得
   const allMessages: DiscordMessage[] = [];
@@ -80,16 +78,16 @@ async function fetchChannelMessages(
  */
 async function insertMessages(messages: DiscordMessage[]): Promise<void> {
   const rows = messages.map((msg) => ({
-    id: Number(msg.id),
-    channel_id: Number(msg.channel_id),
-    author_id: Number(msg.author.id),
+    id: msg.id,
+    channel_id: msg.channel_id,
+    author_id: msg.author.id,
     author_name: msg.author.global_name || msg.author.username,
     content: msg.content || '',
     created_at: msg.timestamp,
     reaction_count: msg.reactions
       ? msg.reactions.reduce((sum, r) => sum + r.count, 0)
       : 0,
-    reply_to_message_id: getReplyToMessageId(msg),
+    reply_to_message_id: getReplyToMessageId(msg)?.toString(),
     fetched_at: new Date().toISOString(),
   }));
 
@@ -110,12 +108,9 @@ async function insertMessages(messages: DiscordMessage[]): Promise<void> {
 /**
  * Discord メッセージから返信先の message_id を取得
  */
-function getReplyToMessageId(msg: DiscordMessage): number | null {
+function getReplyToMessageId(msg: DiscordMessage): string | null {
   const ref = (msg as DiscordMessageWithRef).message_reference;
-  if (ref?.message_id) {
-    return Number(ref.message_id);
-  }
-  return null;
+  return ref?.message_id ?? null;
 }
 
 /** Discord API のメッセージには message_reference がある場合がある */
@@ -137,10 +132,10 @@ async function updateLastFetchedMessageId(
   const { error } = await supabase
     .from('channels')
     .update({
-      last_fetched_message_id: Number(latestMessageId),
+      last_fetched_message_id: latestMessageId,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', Number(channelId));
+    .eq('id', channelId);
 
   if (error) {
     warn('Failed to update last_fetched_message_id', {

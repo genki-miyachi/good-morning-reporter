@@ -21,6 +21,7 @@ export async function searchSerendipity(
       query_embedding: JSON.stringify(queryEmbedding),
       exclude_date: todayDateStr,
       match_count: limit,
+      search_months: 6,
     });
 
     if (error) {
