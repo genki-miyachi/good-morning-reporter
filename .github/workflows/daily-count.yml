@@ -1,8 +1,8 @@
 name: Daily Discord Count
 
 on:
-  schedule:
-    - cron: "0 14 * * *"
+  # schedule:
+  #   - cron: "0 14 * * *"
   workflow_dispatch:
 
 jobs:
