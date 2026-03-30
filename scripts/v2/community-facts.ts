@@ -31,15 +31,45 @@ function loadFactsFile(): CommunityFactsFile {
  */
 export async function syncCommunityFacts(): Promise<number> {
   const facts = loadFactsFile();
+
+  // JSON にないエントリを DB から削除するため、manual メモリの key セットを構築
+  const jsonKeys = new Set<string>();
+  for (const mem of facts.server) {
+    jsonKeys.add(`server:${GUILD_ID}:${mem.key}`);
+  }
+  for (const [userId, memories] of Object.entries(facts.users)) {
+    for (const mem of memories) {
+      jsonKeys.add(`user:${userId}:${mem.key}`);
+    }
+  }
+
+  // DB の manual メモリを取得
+  const { data: existingManual } = await supabase
+    .from('memories')
+    .select('id, scope, scope_id, key')
+    .eq('source', 'manual');
+
+  // JSON から削除されたエントリを DB から削除
+  let deleted = 0;
+  for (const row of existingManual || []) {
+    const compositeKey = `${row.scope}:${row.scope_id}:${row.key}`;
+    if (!jsonKeys.has(compositeKey)) {
+      await supabase.from('memories').delete().eq('id', row.id);
+      deleted++;
+    }
+  }
+  if (deleted > 0) {
+    info('Deleted stale manual memories', { deleted });
+  }
+
+  // upsert
   let count = 0;
 
-  // server スコープ
   for (const mem of facts.server) {
     const ok = await upsertManualMemory('server', GUILD_ID, mem);
     if (ok) count++;
   }
 
-  // user スコープ
   for (const [userId, memories] of Object.entries(facts.users)) {
     for (const mem of memories) {
       const ok = await upsertManualMemory('user', userId, mem);
@@ -47,7 +77,7 @@ export async function syncCommunityFacts(): Promise<number> {
     }
   }
 
-  info('Synced community facts', { count });
+  info('Synced community facts', { count, deleted });
   return count;
 }
 
