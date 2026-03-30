@@ -1,8 +1,8 @@
 name: Daily Discord Count V2
 
 on:
-  schedule:
-    - cron: "0 14 * * *" # 23:00 JST
+  # schedule:
+  #   - cron: "0 14 * * *" # 23:00 JST
   workflow_dispatch:
     inputs:
       dry_run:
