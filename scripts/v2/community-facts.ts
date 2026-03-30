@@ -18,10 +18,7 @@ interface CommunityFactsFile {
 const GUILD_ID = process.env.GUILD_ID!;
 
 function loadFactsFile(): CommunityFactsFile {
-  const filePath = resolve(
-    import.meta.dirname,
-    '../../config/community-facts.json',
-  );
+  const filePath = resolve(process.cwd(), 'config/community-facts.json');
   return JSON.parse(readFileSync(filePath, 'utf-8')) as CommunityFactsFile;
 }
 
