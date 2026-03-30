@@ -1,0 +1,53 @@
+name: Daily Discord Count V2
+
+on:
+  # schedule:
+  #   - cron: "0 14 * * *" # 23:00 JST
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "DRY_RUN (投稿せずコンソール出力のみ)"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Build TypeScript
+        run: npm run build
+      - name: Smoke test (validate env & DB connection)
+        run: |
+          node -e "
+            const { createClient } = require('@supabase/supabase-js');
+            const vars = ['DISCORD_BOT_TOKEN','CHANNEL_ID','GUILD_ID','GOOGLE_API_KEY','SUPABASE_URL','SUPABASE_KEY'];
+            const missing = vars.filter(v => !process.env[v]);
+            if (missing.length) { console.error('Missing:', missing.join(', ')); process.exit(1); }
+            console.log('All env vars OK');
+            const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+            sb.from('channels').select('id', { count: 'exact', head: true }).then(({ count, error }) => {
+              if (error) { console.error('DB error:', error.message); process.exit(1); }
+              console.log('DB connection OK, channels:', count);
+            });
+          "
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ vars.CHANNEL_ID }}
+          GUILD_ID: ${{ vars.GUILD_ID }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          GEMINI_TIMEOUT_MS: ${{ vars.GEMINI_TIMEOUT_MS }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
