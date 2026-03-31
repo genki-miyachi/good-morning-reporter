@@ -1,0 +1,7 @@
+name = "gm-cron-trigger"
+account_id = "dc362f5a9a015b3392274813ff18880a"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[triggers]
+crons = ["0 14 * * *"]  # 23:00 JST
