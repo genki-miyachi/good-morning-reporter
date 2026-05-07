@@ -53,6 +53,11 @@ export async function selectMemories(
   channelMemories: ChannelMemoryContext[];
   userMemories: UserMemoryContext[];
 }> {
+  // gm 投稿が無い日は embedding を生成できないので早期リターン
+  if (!gmContent || gmContent.trim().length === 0) {
+    return { serverMemories: [], channelMemories: [], userMemories: [] };
+  }
+
   // クエリ用の embedding を生成
   const queryEmbedding = await generateEmbedding(gmContent);
 
