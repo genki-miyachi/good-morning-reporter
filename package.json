@@ -4,15 +4,15 @@
   "type": "module",
   "description": "Discord daily GM count reporter bot",
   "scripts": {
-    "build": "tsc",
     "type-check": "tsc --noEmit",
-    "start": "npm run build && node dist/scripts/daily-count.js",
-    "start:dry-run": "npm run build && DRY_RUN=true node dist/scripts/daily-count.js",
-    "post": "node dist/scripts/post.js",
-    "surprise": "node dist/scripts/interval-post.js",
-    "surprise:test": "DRY_RUN=true INTERVAL_MINUTES=0.16 START_JST=16:01 node dist/scripts/interval-post.js",
-    "test": "npm run build && find tests -name '*.test.ts' -exec tsx --test {} +",
-    "test:watch": "npm run build && find tests -name '*.test.ts' -exec tsx --test --watch {} +"
+    "start": "tsx scripts/daily-count.ts",
+    "start:dry-run": "DRY_RUN=true tsx scripts/daily-count.ts",
+    "start:v2": "tsx scripts/daily-count-v2.ts",
+    "post": "tsx scripts/post.ts",
+    "surprise": "tsx scripts/interval-post.ts",
+    "surprise:test": "DRY_RUN=true INTERVAL_MINUTES=0.16 START_JST=16:01 tsx scripts/interval-post.ts",
+    "test": "find tests -name '*.test.ts' -exec tsx --test {} +",
+    "test:watch": "find tests -name '*.test.ts' -exec tsx --test --watch {} +"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

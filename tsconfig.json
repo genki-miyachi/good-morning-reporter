@@ -5,24 +5,14 @@
     "moduleResolution": "node",
     "lib": ["ES2022"],
     "types": ["node"],
-    "outDir": "./dist",
-    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": false,
-    "declarationMap": false,
-    "sourceMap": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "noEmit": true
   },
-  "include": [
-    "scripts/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "tests"
-  ]
+  "include": ["scripts/**/*"],
+  "exclude": ["node_modules", "dist", "tests"]
 }
