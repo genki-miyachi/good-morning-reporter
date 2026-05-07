@@ -13,6 +13,6 @@
     "allowSyntheticDefaultImports": true,
     "noEmit": true
   },
-  "include": ["scripts/**/*"],
-  "exclude": ["node_modules", "dist", "tests"]
+  "include": ["scripts/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
