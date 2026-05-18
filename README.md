@@ -118,7 +118,6 @@ DRY_RUN=true npm start
 │   ├── types/                # 型定義
 │   └── utils/                # ユーティリティ
 ├── tests/                    # テストファイル
-├── dist/                     # ビルド出力（gitignore）
 ├── package.json              # パッケージ設定
 ├── tsconfig.json             # TypeScript設定
 └── README.md                 # このファイル

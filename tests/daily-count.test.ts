@@ -7,6 +7,16 @@ import {
   countUniqueAuthors,
   formatDateString,
 } from '../scripts/daily-count.js';
+import { DiscordMessage } from '../scripts/types/discord.js';
+
+const mockMessage = (
+  partial: Pick<DiscordMessage, 'id' | 'author' | 'content'>,
+): DiscordMessage => ({
+  channel_id: '0',
+  timestamp: '2024-01-15T00:00:00Z',
+  edited_timestamp: null,
+  ...partial,
+});
 
 describe('daily-count.test.ts', () => {
   describe('getStartOfDayUTC', () => {
@@ -61,27 +71,27 @@ describe('daily-count.test.ts', () => {
   });
 
   describe('countMessages', () => {
-    const testMessages = [
-      {
+    const testMessages: DiscordMessage[] = [
+      mockMessage({
         id: '1',
         author: { id: 'user1', bot: false, username: 'user1' },
         content: 'Hello',
-      },
-      {
+      }),
+      mockMessage({
         id: '2',
         author: { id: 'bot1', bot: true, username: 'bot1' },
         content: 'Bot message',
-      },
-      {
+      }),
+      mockMessage({
         id: '3',
         author: { id: 'user2', bot: false, username: 'user2' },
         content: 'GM!',
-      },
-      {
+      }),
+      mockMessage({
         id: '4',
         author: { id: 'user3', bot: false, username: 'user3' },
         content: 'Good morning',
-      },
+      }),
     ];
 
     test('should count all messages without filters', () => {
@@ -119,12 +129,12 @@ describe('daily-count.test.ts', () => {
   });
 
   describe('countUniqueAuthors', () => {
-    const testMessages = [
-      { id: '1', author: { id: 'user1', bot: false, username: 'user1' }, content: 'A' },
-      { id: '2', author: { id: 'user1', bot: false, username: 'user1' }, content: 'B' },
-      { id: '3', author: { id: 'user2', bot: false, username: 'user2' }, content: 'C' },
-      { id: '4', author: { id: 'bot1', bot: true, username: 'bot1' }, content: 'D' },
-      { id: '5', author: { id: 'user3', bot: false, username: 'user3' }, content: 'E' },
+    const testMessages: DiscordMessage[] = [
+      mockMessage({ id: '1', author: { id: 'user1', bot: false, username: 'user1' }, content: 'A' }),
+      mockMessage({ id: '2', author: { id: 'user1', bot: false, username: 'user1' }, content: 'B' }),
+      mockMessage({ id: '3', author: { id: 'user2', bot: false, username: 'user2' }, content: 'C' }),
+      mockMessage({ id: '4', author: { id: 'bot1', bot: true, username: 'bot1' }, content: 'D' }),
+      mockMessage({ id: '5', author: { id: 'user3', bot: false, username: 'user3' }, content: 'E' }),
     ];
 
     test('should count unique non-bot authors by default (bots included)', () => {

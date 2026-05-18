@@ -23,10 +23,11 @@ describe('utils/retry.test.ts', () => {
     const result = await withRetry(fn, {
       maxAttempts: 3,
       baseDelayMs: 10,
-      isRetryable: (error: unknown) => {
-        return error && typeof error === 'object' && 'status' in error &&
-          (error as { status: number }).status === 429;
-      },
+      isRetryable: (error: unknown) =>
+        Boolean(
+          error && typeof error === 'object' && 'status' in error &&
+          (error as { status: number }).status === 429,
+        ),
     });
 
     assert.strictEqual(result, 'success');

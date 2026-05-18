@@ -18,16 +18,8 @@ jobs:
           cache: "npm"
       - name: Install dependencies
         run: npm ci
-      - name: Build TypeScript
-        run: npm run build
       - name: Sync community facts to DB
-        run: |
-          node -e "
-            import('./dist/scripts/v2/community-facts.js')
-              .then(m => m.syncCommunityFacts())
-              .then(count => console.log('Synced', count, 'facts'))
-              .catch(e => { console.error(e); process.exit(1); });
-          "
+        run: npx tsx scripts/sync-community-facts.ts
         env:
           GUILD_ID: ${{ vars.GUILD_ID }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
