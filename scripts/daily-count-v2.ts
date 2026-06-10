@@ -27,6 +27,7 @@ import {
 import { selectMemories } from './v2/memory-selector.js';
 import { searchSerendipity } from './v2/serendipity.js';
 import { fetchTodayActivities } from './v2/activity-fetcher.js';
+import { fetchHotConversation } from './v2/hot-conversation.js';
 import { buildPromptV2, GmMessageContext } from './v2/prompt-v2.js';
 import { supabase } from './v2/supabase-client.js';
 import { DiscordMessage } from './types/discord.js';
@@ -158,6 +159,9 @@ async function main(): Promise<void> {
       channelId,
     );
 
+    // 今日の盛り上がりスポット（gm 促進用）
+    const hotConversation = await fetchHotConversation(todayStart, channelId);
+
     // セレンディピティ検索（MVP の gm 投稿で検索）
     const gmContentForSearch = gmMessages
       .map((m) => m.content)
@@ -200,6 +204,7 @@ async function main(): Promise<void> {
       userMemories,
       recentMvpUserIds,
       recentBotPosts: recentBotPosts || [],
+      hotConversation,
     });
 
     // Gemini でメッセージ生成

@@ -76,6 +76,25 @@ export interface TodayActivity {
   }[];
 }
 
+/** 今日の盛り上がり会話（gm 促進用） */
+export interface HotConversationContext {
+  channelId: string;
+  channelName: string;
+  participantCount: number;
+  messageCount: number;
+  totalReactions: number;
+  /** その会話で最も注目を集めたユーザー（呼びかけ対象） */
+  starUserId: string;
+  starUserName: string;
+  /** 会話の抜粋（created_at 昇順、最大数件） */
+  excerpt: {
+    authorName: string;
+    authorId: string;
+    content: string;
+    isStar: boolean;
+  }[];
+}
+
 /** セレンディピティ検索結果 */
 export interface SerendipityResult {
   channelName: string;
