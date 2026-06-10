@@ -5,6 +5,7 @@ import {
   ChannelMemoryContext,
   ServerMemoryContext,
   BotPostRow,
+  HotConversationContext,
 } from './types.js';
 import { formatPinnedMemories } from './community-facts.js';
 
@@ -29,6 +30,7 @@ export interface BuildPromptV2Options {
   userMemories: UserMemoryContext[];
   recentMvpUserIds: string[];
   recentBotPosts: BotPostRow[];
+  hotConversation: HotConversationContext | null;
 }
 
 export async function buildPromptV2(opts: BuildPromptV2Options): Promise<string> {
@@ -43,6 +45,7 @@ export async function buildPromptV2(opts: BuildPromptV2Options): Promise<string>
       ? opts.recentMvpUserIds.join(', ')
       : '（なし）';
   const recentBotPostsText = formatRecentBotPosts(opts.recentBotPosts);
+  const hotConversationText = formatHotConversation(opts.hotConversation);
 
   return `# 役割定義
 あなたは「gmを讃えるベビ」というDiscordアカウントです。
@@ -57,7 +60,7 @@ export async function buildPromptV2(opts: BuildPromptV2Options): Promise<string>
 - **200〜2000文字**に収める
 - **4セクション構成**（挨拶 / 集計 / 結果メッセージ / 終わりの挨拶）
 - この時、セクションタイトルなどは含めないこと。
-- メンションは **必ず1人だけ**。 <@userId> 形式
+- メンションは **MVP1人** が基本。加えて、盛り上がりスポット（hotConversation）の主役が居る場合のみ、その主役を**もう1人だけ**メンションしてよい（最大2人）。それ以外のメンションは禁止。<@userId> 形式
 - @everyone/@here 禁止
 - 終わりの挨拶は一日の終わりであることを考慮すること
 - トーン: カジュアルで前向き、敬語不使用
@@ -133,6 +136,16 @@ ${todayActivityText}
 面白い繋がりや伏線回収があれば自然に触れてもよいが、無理に使う必要はない。
 ${serendipityText}
 
+## 今日の盛り上がりスポット（gm 促進用）
+以下は gm 以外のチャンネルで今日いちばん盛り上がっていた会話である。
+**結果メッセージのセクション内で、この話題に必ず触れること**（データが「（なし）」の場合は触れなくてよい）。
+狙いは、gm していない人も含めて「自分の話題に興味を持ってもらえた」と感じさせ、明日以降の gm 参加を促すこと。
+- 「今日は #チャンネル名 が盛り上がってたね！」と、その会話があったことを紹介する
+- 主役ユーザー（starUser）を <@userId> でメンションし、「特に〇〇！」と名指しで持ち上げる
+- 会話抜粋から具体的な話題を1つ拾い、「その〇〇の話、もっと詳しく聞きたいな！」のように**続きをねだる**前のめりな一言を入れる
+- 監視している印象を避け、「たまたま見かけて気になった」という仲間目線のテンションで
+${hotConversationText}
+
 ## 各投稿者のメモリ
 ${userMemoryText}
 
@@ -179,6 +192,23 @@ function formatSerendipity(results: SerendipityResult[]): string {
         `- [#${r.channelName}] ${r.authorName}: "${r.content}" (${r.createdAt}, 類似度: ${r.similarityScore.toFixed(2)})`,
     )
     .join('\n');
+}
+
+function formatHotConversation(hot: HotConversationContext | null): string {
+  if (!hot) return '（なし）';
+
+  const excerptText = hot.excerpt
+    .map((m) => {
+      const marker = m.isStar ? '★' : ' ';
+      return `  ${marker} ${m.authorName}: ${m.content}`;
+    })
+    .join('\n');
+
+  return `チャンネル: #${hot.channelName}
+主役ユーザー（starUser）: <@${hot.starUserId}> (${hot.starUserName})
+参加者数: ${hot.participantCount}人 / メッセージ数: ${hot.messageCount}件 / リアクション合計: ${hot.totalReactions}
+会話抜粋（★が主役）:
+${excerptText}`;
 }
 
 function formatServerMemories(memories: ServerMemoryContext[]): string {
