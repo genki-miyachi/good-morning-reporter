@@ -44,5 +44,6 @@ jobs:
           GEMINI_TIMEOUT_MS: ${{ vars.GEMINI_TIMEOUT_MS }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          MAINTAINER_DISCORD_ID: ${{ vars.MAINTAINER_DISCORD_ID }}
           DRY_RUN: ${{ github.event.inputs.dry_run || '' }}
           READONLY: ${{ github.event.inputs.readonly || '' }}

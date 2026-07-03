@@ -36,13 +36,16 @@ dotenvConfig();
 const TIMEZONE = process.env.TIMEZONE || 'Asia/Tokyo';
 
 async function main(): Promise<void> {
-  try {
-    const token = process.env.DISCORD_BOT_TOKEN;
-    const channelId = process.env.CHANNEL_ID; // gm チャンネル
-    const guildId = process.env.GUILD_ID;
-    const dryRun = process.env.DRY_RUN === 'true';
-    const readonly = process.env.READONLY === 'true';
+  const token = process.env.DISCORD_BOT_TOKEN;
+  const channelId = process.env.CHANNEL_ID; // gm チャンネル
+  const guildId = process.env.GUILD_ID;
+  const dryRun = process.env.DRY_RUN === 'true';
+  const readonly = process.env.READONLY === 'true';
 
+  // フォロー投稿で使い回すため try の外で保持
+  let gmCount: number | null = null;
+
+  try {
     if (!token || !channelId || !guildId) {
       throw new Error(
         'DISCORD_BOT_TOKEN, CHANNEL_ID, GUILD_ID are required',
@@ -105,6 +108,7 @@ async function main(): Promise<void> {
       ...new Set(gmMessages.map((m) => m.author.id)),
     ];
     const count = uniqueAuthors.length;
+    gmCount = count; // フォロー投稿用に保持
 
     info('GM channel stats', {
       count,
@@ -247,7 +251,82 @@ async function main(): Promise<void> {
     }
   } catch (err) {
     logError('Error in daily-count-v2', err);
+    await postFallbackMessage({ token, channelId, dryRun, gmCount });
     process.exit(1);
+  }
+}
+
+/**
+ * メイン処理が落ちたときのフォロー投稿。
+ * Gemini に依存せず、集計とヘルプメッセージだけを投稿する。
+ */
+async function postFallbackMessage(opts: {
+  token?: string;
+  channelId?: string;
+  dryRun: boolean;
+  gmCount: number | null;
+}): Promise<void> {
+  const { token, channelId, dryRun } = opts;
+  if (!token || !channelId) {
+    logError(
+      'Fallback post skipped: missing token or channelId',
+      new Error('missing token or channelId'),
+    );
+    return;
+  }
+
+  try {
+    // 集計前に落ちた場合は Discord から取り直す（DB/Gemini 非依存）
+    const count =
+      opts.gmCount ?? (await fetchGmCountFromDiscord(channelId, token));
+
+    const maintainer = process.env.MAINTAINER_DISCORD_ID
+      ? `<@${process.env.MAINTAINER_DISCORD_ID}>`
+      : 'Genki Miyachi';
+
+    const countText =
+      count !== null ? `${count}人` : '…集計もうまくできなかった';
+    const message =
+      `おつかれー、ベビだよ。今日の gm は ${countText} だったね。\n` +
+      `でもベビ、なんだか今日は少し疲れちゃったみたい…うまくメッセージが作れなかったよ。\n` +
+      `${maintainer} 助けて〜！🥺🦁`;
+
+    if (dryRun) {
+      info('DRY_RUN mode: Would post the following FALLBACK message');
+      console.log('---FALLBACK---');
+      console.log(message);
+      console.log('---');
+      return;
+    }
+
+    await postResult(channelId, message, token);
+    info('Fallback message posted', { count });
+  } catch (fallbackErr) {
+    logError('Failed to post fallback message', fallbackErr);
+  }
+}
+
+/**
+ * gm チャンネルの当日ユニーク投稿者数を Discord から直接取得（フォロー投稿用）。
+ * 直近 100 件を1ページ取得して当日分をカウントする（gm は日次 100 件未満想定）。
+ */
+async function fetchGmCountFromDiscord(
+  channelId: string,
+  token: string,
+): Promise<number | null> {
+  try {
+    const startOfDay = getStartOfDayUTC(new Date(), TIMEZONE);
+    const messages = await fetchMessages(channelId, null, token);
+    const authorIds = messages
+      .filter((m) => !m.author.bot)
+      .filter(
+        (m) => new Date(m.timestamp).getTime() >= startOfDay.getTime(),
+      )
+      .map((m) => m.author.id);
+    return new Set(authorIds).size;
+  } catch (e) {
+    logError('Fallback count fetch failed', e);
+    return null;
   }
 }
 
